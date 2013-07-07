@@ -1,0 +1,84 @@
+--- dwm.c	2011-12-19 07:02:46.000000000 -0800
++++ dwm.c.new	2012-11-12 03:14:28.000000000 -0800
+@@ -170,6 +170,7 @@
+ static void configure(Client *c);
+ static void configurenotify(XEvent *e);
+ static void configurerequest(XEvent *e);
++static void conky(Monitor *);
+ static Monitor *createmon(void);
+ static void destroynotify(XEvent *e);
+ static void detach(Client *c);
+@@ -643,6 +644,54 @@
+ 	XSync(dpy, False);
+ }
+ 
++void
++conky(Monitor *m) {
++	unsigned int i, n, h, mw, my, ty;
++	Client *c, *conkyc = NULL;
++
++	for(n = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), n++)
++	{
++		if (strstr(c->name, "Conky"))
++			conkyc = c;
++	}
++	if(n == 0)
++		return;
++
++	unsigned int conkyw = 0;
++	unsigned int conkyx = m->wx;
++	unsigned int new_ww = m->ww;
++	if(conkyc) {
++		conkyw = conkyc->w > 304? conkyc->w : 304;
++		conkyx += conkyw;
++		new_ww -= conkyw;
++		resize(conkyc, m->wx, m->wy, conkyw, m->wh - 2 * conkyc->bw, False);
++		if(--n == 0)
++			return;
++	}
++
++	if(n > m->nmaster)
++		mw = m->nmaster ? new_ww * m->mfact : 0;
++	else
++		mw = new_ww;
++	for(i = my = ty = 0, c = nexttiled(m->clients); c; c = nexttiled(c->next), i++)
++	{
++		if(c == conkyc){
++			--i;
++			continue;
++		}
++		if(i < m->nmaster) {
++			h = (m->wh - my) / (MIN(n, m->nmaster) - i);
++			resize(c, conkyx, m->wy + my, mw - (2*c->bw), h - (2*c->bw), False);
++			my += HEIGHT(c);
++		}
++		else {
++			h = (m->wh - ty) / (n - i);
++			resize(c, conkyx + mw, m->wy + ty, new_ww - mw - (2*c->bw), h - (2*c->bw), False);
++			ty += HEIGHT(c);
++		}
++	}
++}
++
+ Monitor *
+ createmon(void) {
+ 	Monitor *m;
+@@ -906,8 +956,16 @@
+ 					c = i;
+ 	}
+ 	if(c) {
+-		focus(c);
+-		restack(selmon);
++		if (strstr(c->name, "Conky"))
++		{
++			focus(c);
++			restack(selmon);
++			focusstack(arg);
++		}
++		else {
++			focus(c);
++			restack(selmon);
++		}
+ 	}
+ }
+ 
