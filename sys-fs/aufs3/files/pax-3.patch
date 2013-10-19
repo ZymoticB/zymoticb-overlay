@@ -72,21 +72,18 @@
  			if (p->fop.aio_read)
  				p->fop.aio_read = aufs_aio_read_sp;
  			if (p->fop.aio_write)
-diff -Naur linux-3.8.3-pentoo/fs/aufs/sysfs.c linux-3.8.3-pentoo-aufsfix/fs/aufs/sysfs.c
---- linux-3.8.3-pentoo/fs/aufs/sysfs.c	2013-04-29 00:07:50.478827567 -0400
-+++ linux-3.8.3-pentoo-aufsfix/fs/aufs/sysfs.c	2013-04-28 23:46:23.724793109 -0400
+--- a/fs/aufs/sysfs.c	2013-10-20 17:08:37.000000000 -0400
++++ b/fs/aufs/sysfs.c	2013-10-19 17:08:29.000000000 -0400
 @@ -233,8 +233,10 @@
-        for (i = 0; i < ARRAY_SIZE(br->br_sysfs); i++) {
-                attr = &br_sysfs->attr;
-                sysfs_attr_init(attr);
--               attr->name = br_sysfs->name;
--               attr->mode = S_IRUGO;
-+               pax_open_kernel();
-+               *(void **)&attr->name = br_sysfs->name;
-+               *(void **)&attr->mode = S_IRUGO;
-+               pax_close_kernel();
-                br_sysfs++;
-        }
+ 	for (i = 0; i < ARRAY_SIZE(br->br_sysfs); i++) {
+ 		attr = &br_sysfs->attr;
+ 		sysfs_attr_init(attr);
+-		attr->name = br_sysfs->name;
+-		attr->mode = S_IRUGO;
++		pax_open_kernel();
++		*(void **)&attr->name = br_sysfs->name;
++		*(void **)&attr->mode = S_IRUGO;
++		pax_close_kernel();
+ 		br_sysfs++;
+ 	}
  }
- 
- void sysaufs_brs_del(struct super_block *sb, aufs_bindex_t bindex)
